@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import Link from "next/link";
+import { cookies } from "next/headers";
 import Header from "@/components/Header";
 import { getAllSettings } from "@/lib/settings";
 
@@ -21,6 +23,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const locale = cookieStore.get("locale")?.value || "en";
   const settings = await getAllSettings();
 
   return (
@@ -31,10 +35,18 @@ export default async function RootLayout({
           {children}
         </main>
         <footer
-          className="w-full flex items-center justify-center text-white text-xs"
-          style={{ height: "1cm", backgroundColor: settings.hero_bg_color_start }}
+          className="w-full text-white text-xs"
+          style={{ backgroundColor: settings.hero_bg_color_start }}
         >
-          Pusat Informasi : @2026
+          <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-[1cm]">
+            <span>Pusat Informasi &copy; 2026</span>
+            <Link
+              href="/guide"
+              className="hover:underline hover:text-white/80 transition-colors"
+            >
+              {locale === "id" ? "Panduan" : "Guide"}
+            </Link>
+          </div>
         </footer>
       </body>
     </html>
