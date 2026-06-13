@@ -120,10 +120,24 @@ export default function Header({ siteTitle = "KMC", logoUrl, heroBgColorStart = 
       setLocale(localeCookie.split("=")[1]);
     }
 
+    // Check sessionStorage first for instant display
+    const storedUser = sessionStorage.getItem("user");
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch {}
+    }
+
+    // Then fetch from API to validate session
     fetch("/api/auth/me")
       .then(r => r.json())
       .then(data => {
-        if (data.user) setUser(data.user);
+        if (data.user) {
+          setUser(data.user);
+          sessionStorage.setItem("user", JSON.stringify(data.user));
+        } else {
+          sessionStorage.removeItem("user");
+        }
       })
       .catch(() => {});
   }, []);
@@ -137,6 +151,7 @@ export default function Header({ siteTitle = "KMC", logoUrl, heroBgColorStart = 
   const handleLogout = async () => {
     await fetch("/api/auth/me", { method: "POST" });
     setUser(null);
+    sessionStorage.removeItem("user");
     window.location.href = "/";
   };
 

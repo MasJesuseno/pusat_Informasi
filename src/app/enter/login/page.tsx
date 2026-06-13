@@ -27,6 +27,8 @@ export default function LoginPage() {
       if (!res.ok) {
         setError(data.error || "Login failed");
       } else {
+        // Save user to sessionStorage for immediate header update
+        sessionStorage.setItem("user", JSON.stringify(data.user));
         // Redirect based on role
         const role = data.user?.role;
         if (role === "HR") {
