@@ -26,9 +26,11 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const response = NextResponse.json({ success: true });
+  const isSecure = request.headers.get("x-forwarded-proto") === "https" ||
+    request.url.startsWith("https");
   response.cookies.set("token", "", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isSecure,
     sameSite: "lax",
     maxAge: 0,
     path: "/",
