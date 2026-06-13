@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE `group` ADD COLUMN `status` VARCHAR(191) NOT NULL DEFAULT 'PUBLIC';
+
+-- AlterTable
+ALTER TABLE `subgroup` ADD COLUMN `status` VARCHAR(191) NOT NULL DEFAULT 'PUBLIC';

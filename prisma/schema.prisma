@@ -1,0 +1,211 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  password  String
+  name      String
+  role      String    @default("INTERNAL")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  articles      Article[]
+  collections   ArticleCollection[]
+  assignments   ExamAssignment[]
+}
+
+model ArticleCollection {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  articleId Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, articleId])
+}
+
+model Group {
+  id        Int              @id @default(autoincrement())
+  order     Int              @default(0)
+  status    String           @default("PUBLIC")
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  subgroups SubGroup[]
+  articles  Article[]
+  translations GroupTranslation[]
+}
+
+model GroupTranslation {
+  id       Int    @id @default(autoincrement())
+  groupId  Int
+  locale   String
+  name     String
+  group    Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, locale])
+}
+
+model SubGroup {
+  id        Int                 @id @default(autoincrement())
+  groupId   Int
+  order     Int                 @default(0)
+  status    String              @default("PUBLIC")
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  group     Group               @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  articles  Article[]
+  translations SubGroupTranslation[]
+}
+
+model SubGroupTranslation {
+  id         Int    @id @default(autoincrement())
+  subgroupId Int
+  locale     String
+  name       String
+  subgroup   SubGroup @relation(fields: [subgroupId], references: [id], onDelete: Cascade)
+
+  @@unique([subgroupId, locale])
+}
+
+model Article {
+  id         Int                  @id @default(autoincrement())
+  groupId    Int
+  subgroupId Int?
+  status     String               @default("PUBLIC")
+  authorId   Int
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+  group      Group                @relation(fields: [groupId], references: [id])
+  subgroup   SubGroup?            @relation(fields: [subgroupId], references: [id])
+  author     User                 @relation(fields: [authorId], references: [id])
+  translations ArticleTranslation[]
+  feedback   ArticleFeedback[]
+  collections ArticleCollection[]
+}
+
+model ArticleTranslation {
+  id        Int     @id @default(autoincrement())
+  articleId Int
+  locale    String
+  title     String
+  content   String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, locale])
+}
+
+model ArticleFeedback {
+  id        Int      @id @default(autoincrement())
+  articleId Int
+  helpful   Boolean
+  ip        String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, ip])
+}
+
+model QuestionGroup {
+  id        Int                      @id @default(autoincrement())
+  order     Int                      @default(0)
+  status    String                   @default("PUBLIC")
+  createdAt DateTime                 @default(now())
+  updatedAt DateTime                 @updatedAt
+  translations QuestionGroupTranslation[]
+  questions   Question[]
+}
+
+model QuestionGroupTranslation {
+  id              Int           @id @default(autoincrement())
+  questionGroupId Int
+  locale          String
+  name            String
+  questionGroup   QuestionGroup @relation(fields: [questionGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([questionGroupId, locale])
+}
+
+model Question {
+  id                 Int             @id @default(autoincrement())
+  questionGroupId    Int
+  content            String
+  imageUrl           String?
+  order              Int             @default(0)
+  correctOptionIndex Int             @default(0)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  questionGroup      QuestionGroup   @relation(fields: [questionGroupId], references: [id], onDelete: Cascade)
+  options            QuestionOption[]
+  exams              ExamQuestion[]
+  answers            ExamAnswer[]
+}
+
+model QuestionOption {
+  id         Int      @id @default(autoincrement())
+  questionId Int
+  index      Int
+  content    String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, index])
+}
+
+model Exam {
+  id        Int            @id @default(autoincrement())
+  name      String
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  questions      ExamQuestion[]
+  assignments    ExamAssignment[]
+}
+
+model ExamQuestion {
+  id         Int      @id @default(autoincrement())
+  examId     Int
+  questionId Int
+  exam       Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([examId, questionId])
+}
+
+model ExamAssignment {
+  id          Int          @id @default(autoincrement())
+  examId      Int
+  userId      Int
+  status      String       @default("PENDING")
+  score       Int?
+  startedAt   DateTime?
+  submittedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  exam        Exam         @relation(fields: [examId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers     ExamAnswer[]
+
+  @@unique([examId, userId])
+}
+
+model ExamAnswer {
+  id                  Int            @id @default(autoincrement())
+  assignmentId        Int
+  questionId          Int
+  selectedOptionIndex Int?
+  isCorrect           Boolean?
+  createdAt           DateTime       @default(now())
+  assignment          ExamAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  question            Question       @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model Setting {
+  key   String @id
+  value String
+}
