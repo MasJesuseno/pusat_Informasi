@@ -75,19 +75,39 @@ kmc-project/
 
 > Dibuat: 11 Juni 2026 | Diperbarui: 13 Juni 2026
 > Lokasi: D:\kmc-project
+> Deployment: http://192.168.1.52 (Production server — Ubuntu 26.04 LTS)
+> Cloudflare Tunnel: Terhubung
 > Header Dinamis: Warna latar judul halaman mengikuti Site Settings → hero_bg_color_start
-> Stack: Next.js 16 + TypeScript + Prisma 7 + MySQL 8 + Tailwind CSS 4
+> Login Page: Logo & warna button dinamis dari Site Settings
+> Stack: Next.js 16 + TypeScript + Prisma 7 + MySQL 8 + Tailwind CSS 4 + nginx 1.28 + PM2
 
 ---
 
 ## 1. Cara Menjalankan
 
+### Development (Lokal — D:\kmc-project)
 ```bash
-npm run dev     # Development server (http://localhost:3000)
+npm run dev     # http://localhost:3000
 npm run build   # Production build
 npm start       # Production server
 npx tsx prisma/seed.ts  # Seed data ulang
 npx prisma migrate deploy  # Migrasi database
+```
+
+### Production (Server 192.168.1.52 — Ubuntu 26.04)
+| Layanan | Port | Keterangan |
+|---------|------|------------|
+| Next.js (PM2) | 3000 | Aplikasi utama, via `pm2 start npm --name kmc-project -- start` |
+| nginx reverse proxy | 80 | Proxy 80 → 3000, set X-Forwarded-Proto |
+| Cloudflare Tunnel | - | Tunnel ke Cloudflare (token di systemd) |
+| MySQL | 3306 | Database kmc, root tanpa password (mysql_native_password) |
+
+### SSH Akses Server
+```bash
+plink -ssh root@192.168.1.52
+# Password: it92528!@
+# Atau via pscp untuk transfer file:
+pscp -pw it92528!@ file.sql root@192.168.1.52:/root/kmc-project/
 ```
 
 ---
@@ -578,6 +598,21 @@ Settings disimpan di database (model Setting: key String @id, value String).
 5. **PrismaClient singleton menyimpan instansi lama setelah migration**
    - Setelah `prisma migrate dev`, restart dev server agar PrismaClient memuat model baru
 
+6. **MySQL case-sensitive table names di Linux** (Sudah diperbaiki)
+   - Migrasi `20260612091621_add_status_groups_subgroups` menggunakan `group` lowercase
+   - Linux MySQL case-sensitive → error karena tabel bernama `Group` (kapital)
+   - Fix: ubah `group` → `Group`, `subgroup` → `SubGroup` di migration.sql
+
+7. **Cookie secure flag blocking login/logout via HTTP** (Sudah diperbaiki)
+   - Login & logout API set `secure: process.env.NODE_ENV === "production"`
+   - Browser tolak cookie secure di koneksi HTTP → login/logout tidak berfungsi
+   - Fix: ganti ke `secure: request.headers.get("x-forwarded-proto") === "https"`
+
+8. **Menu tidak muncul setelah login** (Sudah diperbaiki)
+   - Header di root layout, tidak re-mount saat `router.push()` (client-side nav)
+   - `sessionStorage` menyimpan data user setelah login
+   - `window.location.href` untuk full page reload agar Header re-mount
+
 ---
 
 ## 16. Catatan untuk Pengembangan Selanjutnya
@@ -588,7 +623,8 @@ Settings disimpan di database (model Setting: key String @id, value String).
 - [ ] Upload gambar/file untuk artikel (sudah ada endpoint, perlu integrasi)
 - [ ] Rate limiting API
 - [ ] Unit tests
-- [ ] Deploy ke production
+- [x] Deploy ke production server (192.168.1.52 — Ubuntu 26.04)
 - [ ] Export soal ke PDF/excel
 - [ ] Quiz/try-out interaktif untuk soal
 - [ ] Halaman publik untuk mengerjakan ujian
+- [ ] Setup HTTPS/SSL via Cloudflare
