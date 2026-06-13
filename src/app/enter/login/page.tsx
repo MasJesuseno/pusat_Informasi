@@ -1,12 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+interface LoginSettings {
+  site_title: string;
+  site_logo: string;
+  hero_bg_color_start: string;
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [settings, setSettings] = useState<LoginSettings | null>(null);
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then(r => r.json())
+      .then(data => {
+        if (data.settings) setSettings(data.settings);
+      })
+      .catch(() => {});
+  }, []);
+
+  const bgColor = settings?.hero_bg_color_start || "#4f46e5";
+  const siteTitle = settings?.site_title || "Knowledge Management Center";
+  const logoUrl = settings?.site_logo || "";
+  const initials = siteTitle.split(" ").map(w => w[0]).join("").substring(0, 3).toUpperCase() || "KMC";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,12 +64,17 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
           <div className="text-center mb-8">
-            <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-              </svg>
+            <div
+              className="w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 overflow-hidden"
+              style={{ backgroundColor: bgColor }}
+            >
+              {logoUrl ? (
+                <img src={logoUrl} alt={siteTitle} className="w-10 h-10 object-contain" />
+              ) : (
+                <span className="text-white text-lg font-bold">{initials}</span>
+              )}
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Knowledge Management Center</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{siteTitle}</h1>
             <p className="text-gray-500 mt-1">Sign in to your account</p>
           </div>
 
@@ -92,7 +118,10 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-2.5 px-4 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: bgColor }}
+              onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(0.9)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.filter = "brightness(1)"; }}
             >
               {loading ? "Signing in..." : "Sign in"}
             </button>
