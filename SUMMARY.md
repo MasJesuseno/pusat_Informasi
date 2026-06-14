@@ -73,7 +73,7 @@ kmc-project/
 
 # KMC (Knowledge Management Center) — Ringkasan Proyek
 
-> Dibuat: 11 Juni 2026 | Diperbarui: 13 Juni 2026
+> Dibuat: 11 Juni 2026 | Diperbarui: 14 Juni 2026
 > Lokasi: D:\kmc-project
 > Deployment: http://192.168.1.52 (Production server — Ubuntu 26.04 LTS)
 > Cloudflare Tunnel: Terhubung
@@ -335,6 +335,7 @@ File konfigurasi:
 | PUT    | /api/settings      | Update settings                  | ADMIN       |
 | POST   | /api/settings      | Upload file (logo/bg image)      | ADMIN       |
 | POST   | /api/upload        | Upload gambar (untuk editor)     | ADMIN       |
+| POST   | /api/parse-pdf     | Parse PDF/DOCX → HTML/text       | ADMIN + HR  |
 
 ### Access Control (Articles GET)
 - PUBLIC → lihat artikel status PUBLIC saja
@@ -403,6 +404,7 @@ File konfigurasi:
 | BookmarkButton              | src/components/BookmarkButton.tsx | Tombol save/bookmark dengan loading state            |
 | CategoryBox                 | src/components/CategoryBox.tsx    | Card kategori hover dinamis, badge INTERNAL          |
 | QuestionGroupFilter         | src/components/QuestionGroupFilter.tsx | Dropdown filter kelompok soal (support placeholder) |
+| DocumentUploader            | src/components/DocumentUploader.tsx    | Upload & parse PDF/DOCX (drag & drop, pratinjau)    |
 
 ---
 
@@ -502,7 +504,7 @@ JWT_SECRET="kmc-super-secret-key-change-in-production-2024"
 ```
 
 ### next.config.ts
-- Konfigurasi Next.js standar (tanpa konfigurasi khusus)
+- `serverExternalPackages: ["pdf-parse"]` — native module PDF parsing
 
 ### tsconfig.json
 - Path alias: @/* → ./src/*
@@ -540,6 +542,8 @@ JWT_SECRET="kmc-super-secret-key-change-in-production-2024"
 | @tiptap/extension-link       | 3.26.1    | Link insertion                        |
 | @tiptap/extension-placeholder| 3.26.1    | Placeholder text                      |
 | @tiptap/pm                   | 3.26.1    | ProseMirror engine                    |
+| pdf-parse                    | ^2.4.5    | PDF text extraction (server-side)    |
+| mammoth                      | ^3.0.0    | Word .docx → HTML conversion         |
 
 ### Dev
 | Package                      | Version   |
@@ -598,6 +602,19 @@ Settings disimpan di database (model Setting: key String @id, value String).
 5. **PrismaClient singleton menyimpan instansi lama setelah migration**
    - Setelah `prisma migrate dev`, restart dev server agar PrismaClient memuat model baru
 
+9. **Kolom content di ArticleTranslation VARCHAR(191) terlalu kecil**
+   - Penyebab: Default Prisma `String` = `VARCHAR(191)` (max 191 karakter)
+   - HTML dari mammoth (Word .docx) bisa puluhan ribu karakter → error simpan
+   - Solusi: `content String @db.LongText` di Prisma schema + ALTER TABLE manual
+
+10. **Upload file resmi hanya di Edit/New Article (PDF + DOCX)**
+   - Input Method toggle: Manual ↔ Upload Document
+   - PDF via `pdf-parse` library (class-based API `PDFParse({data: buffer})`)
+   - DOCX via `mammoth` library (konversi langsung ke HTML)
+   - Component: `DocumentUploader.tsx` (drag & drop, preview)
+   - Endpoint: `POST /api/parse-pdf` (deteksi otomatis PDF/DOCX)
+   - Limit: 10MB per file
+
 6. **MySQL case-sensitive table names di Linux** (Sudah diperbaiki)
    - Migrasi `20260612091621_add_status_groups_subgroups` menggunakan `group` lowercase
    - Linux MySQL case-sensitive → error karena tabel bernama `Group` (kapital)
@@ -620,6 +637,9 @@ Settings disimpan di database (model Setting: key String @id, value String).
 - [ ] Migrasi middleware ke file proxy (Next.js 16 deprecation)
 - [ ] Fitur dark mode
 - [ ] Role management yang lebih granular
+- [x] Upload & parse PDF file ke editor artikel (pdf-parse)
+- [x] Upload & parse Word (.docx) file ke editor artikel (mammoth.js)
+- [x] Fix kolom content VARCHAR(191) → LONGTEXT di ArticleTranslation
 - [ ] Upload gambar/file untuk artikel (sudah ada endpoint, perlu integrasi)
 - [ ] Rate limiting API
 - [ ] Unit tests
