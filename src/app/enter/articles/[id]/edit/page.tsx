@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import ArticleEditor from "@/components/ArticleEditor";
+import DocumentUploader from "@/components/DocumentUploader";
+
+type InputMethod = "manual" | "document";
 
 export default function EditArticlePage() {
   const router = useRouter();
@@ -12,6 +15,7 @@ export default function EditArticlePage() {
   const [groups, setGroups] = useState<any[]>([]);
   const [subgroups, setSubgroups] = useState<any[]>([]);
   const [settings, setSettings] = useState({ hero_bg_color_start: "#4f46e5", hero_bg_color_end: "#4338ca" });
+  const [inputMethod, setInputMethod] = useState<InputMethod>("manual");
   const [formData, setFormData] = useState({
     titleEn: "",
     titleId: "",
@@ -70,6 +74,15 @@ export default function EditArticlePage() {
     const res = await fetch(`/api/subgroups?groupId=${groupId}&locale=en`);
     const data = await res.json();
     setSubgroups(data.subgroups);
+  };
+
+  const handleContentFromDocument = (html: string, text: string) => {
+    // Fill both language contents with the parsed PDF text
+    setFormData(prev => ({
+      ...prev,
+      contentEn: html || `<p>${text}</p>`,
+      contentId: html || `<p>${text}</p>`,
+    }));
   };
 
   const handleSubmit = async (status: string) => {
@@ -170,6 +183,45 @@ export default function EditArticlePage() {
           </select>
         </div>
 
+        {/* Input Method Toggle */}
+        <div className="border-t border-gray-200 pt-6">
+          <label className="block text-sm font-medium text-gray-700 mb-3">Input Method</label>
+          <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setInputMethod("manual")}
+              className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${
+                inputMethod === "manual"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              <span className="flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Write Manually
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setInputMethod("document")}
+              className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${
+                inputMethod === "document"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              <span className="flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                Upload Document
+              </span>
+            </button>
+          </div>
+        </div>
+
         {/* English Fields */}
         <div className="border-t border-gray-200 pt-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">English</h3>
@@ -186,11 +238,22 @@ export default function EditArticlePage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Content (English)</label>
-              <ArticleEditor
-                value={formData.contentEn}
-                onChange={(html) => setFormData({ ...formData, contentEn: html })}
-                placeholder="Write article content in English..."
-              />
+              {inputMethod === "document" ? (
+                <div className="space-y-3">
+                  <DocumentUploader onContentParsed={handleContentFromDocument} />
+                  <ArticleEditor
+                    value={formData.contentEn}
+                    onChange={(html) => setFormData({ ...formData, contentEn: html })}
+                    placeholder="Edit extracted document content in English..."
+                  />
+                </div>
+              ) : (
+                <ArticleEditor
+                  value={formData.contentEn}
+                  onChange={(html) => setFormData({ ...formData, contentEn: html })}
+                  placeholder="Write article content in English..."
+                />
+              )}
             </div>
           </div>
         </div>
@@ -211,11 +274,19 @@ export default function EditArticlePage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Konten (Indonesia)</label>
-              <ArticleEditor
-                value={formData.contentId}
-                onChange={(html) => setFormData({ ...formData, contentId: html })}
-                placeholder="Tulis konten artikel dalam Bahasa Indonesia..."
-              />
+              {inputMethod === "document" ? (
+                <ArticleEditor
+                  value={formData.contentId}
+                  onChange={(html) => setFormData({ ...formData, contentId: html })}
+                  placeholder="Edit extracted document content in Indonesian..."
+                />
+              ) : (
+                <ArticleEditor
+                  value={formData.contentId}
+                  onChange={(html) => setFormData({ ...formData, contentId: html })}
+                  placeholder="Tulis konten artikel dalam Bahasa Indonesia..."
+                />
+              )}
             </div>
           </div>
         </div>
