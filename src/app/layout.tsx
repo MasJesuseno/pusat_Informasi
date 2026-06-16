@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Link from "next/link";
 import { cookies } from "next/headers";
 import Header from "@/components/Header";
+import FooterWrapper from "@/components/FooterWrapper";
 import { getAllSettings } from "@/lib/settings";
 
 const inter = Inter({
@@ -34,20 +34,7 @@ export default async function RootLayout({
         <main className="flex-1">
           {children}
         </main>
-        <footer
-          className="w-full text-white text-xs"
-          style={{ backgroundColor: settings.hero_bg_color_start }}
-        >
-          <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-[1cm]">
-            <span>Pusat Informasi &copy; 2026</span>
-            <Link
-              href="/guide"
-              className="hover:underline hover:text-white/80 transition-colors"
-            >
-              {locale === "id" ? "Panduan" : "Guide"}
-            </Link>
-          </div>
-        </footer>
+        <FooterWrapper heroBgColorStart={settings.hero_bg_color_start} locale={locale} />
       </body>
     </html>
   );

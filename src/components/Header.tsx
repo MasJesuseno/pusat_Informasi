@@ -157,6 +157,11 @@ export default function Header({ siteTitle = "KMC", logoUrl, heroBgColorStart = 
 
   const isInEnter = pathname?.startsWith("/enter");
 
+  // Hide top navbar on enter pages (sidebar replaces it)
+  if (isInEnter) {
+    return null;
+  }
+
   const initials = siteTitle.split(" ").map(w => w[0]).join("").substring(0, 3).toUpperCase() || "KMC";
 
   const toggleDropdown = (name: string) => {
