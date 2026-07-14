@@ -259,12 +259,11 @@ export default function AdminSidebar({
     {
       label: "content",
       icon: "content",
-      items: [
-        { label: "articles", href: "/enter/articles", icon: "articles" },
-        { label: "groups", href: "/enter/groups", icon: "groups" },
-        { label: "subGroups", href: "/enter/subgroups", icon: "subgroups" },
-      ],
-      roles: ["ADMIN", "HR"],
+      items: [                    { label: "groups", href: "/enter/groups", icon: "groups" },
+                        { label: "subGroups", href: "/enter/subgroups", icon: "subgroups" },
+                        { label: "articles", href: "/enter/articles", icon: "articles" },
+                      ],
+                      roles: ["ADMIN", "HR"],
     },
     {
       label: "questionBank",
@@ -458,26 +457,28 @@ export default function AdminSidebar({
                     w-full flex items-center rounded-lg transition-all duration-200 group
                     ${collapsed ? "justify-center w-12 h-10 mx-auto" : "px-3 py-2.5 space-x-3"}
                     ${groupActive
-                      ? "bg-indigo-50 text-indigo-700 font-medium"
-                      : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                      ? "bg-green-600 text-white font-medium shadow-sm"
+                      : "bg-gray-50/80 text-gray-700 hover:bg-green-50 hover:text-green-700"
                     }
                   `}
                   title={collapsed ? t(group.label) : undefined}
                 >
-                  <span className={groupActive ? "text-indigo-600" : "text-gray-400 group-hover:text-gray-600 transition-colors"}>
+                  <span className={groupActive ? "text-white" : "text-gray-400 group-hover:text-green-600 transition-colors"}>
                     <SidebarIcon icon={group.icon} />
                   </span>
                   {!collapsed && (
                     <>
                       <span className="text-sm font-medium flex-1 text-left">{t(group.label)}</span>
-                      <SidebarIcon icon="chevronDown" />
+                      <span className={groupActive ? "text-white/70" : "text-gray-400"}>
+                        <SidebarIcon icon="chevronDown" />
+                      </span>
                     </>
                   )}
                 </button>
 
                 {/* Sub-items */}
                 {(!collapsed && isExpanded) && (
-                  <div className="ml-2 mt-0.5 space-y-0.5">
+                  <div className="ml-2 mt-1 space-y-0.5 bg-white rounded-lg p-1.5 border border-gray-200 shadow-sm">
                     {group.items.map(item => {
                       const itemActive = isActive(item.href);
                       return (
@@ -485,15 +486,15 @@ export default function AdminSidebar({
                           key={item.href}
                           href={item.href}
                           className={`
-                            flex items-center space-x-3 rounded-lg transition-all duration-200
+                            flex items-center space-x-3 rounded-md transition-all duration-200
                             ${collapsed ? "justify-center w-12 h-10 mx-auto" : "px-3 py-2"}
                             ${itemActive
-                              ? "bg-indigo-50 text-indigo-700 font-medium"
-                              : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                              ? "bg-gray-100 text-gray-800 font-medium"
+                              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                             }
                           `}
                         >
-                          <span className={`${itemActive ? "text-indigo-500" : "text-gray-400"} transition-colors`}>
+                          <span className={`${itemActive ? "text-gray-700" : "text-gray-400"} transition-colors`}>
                             <SidebarIcon icon={item.icon} />
                           </span>
                           {!collapsed && <span className="text-sm truncate">{t(item.label)}</span>}
