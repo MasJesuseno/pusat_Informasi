@@ -30,7 +30,7 @@ export default async function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className={`${inter.className} min-h-full bg-gray-50 flex flex-col`}>
-        <Header siteTitle={settings.site_title} logoUrl={settings.site_logo} heroBgColorStart={settings.hero_bg_color_start} />
+        <Header siteTitle={settings.site_title} logoUrl={settings.site_logo} heroBgColorStart={settings.hero_bg_color_start} headerBtnCaption={settings.header_btn_caption} headerBtnLink={settings.header_btn_link} />
         <main className="flex-1">
           {children}
         </main>

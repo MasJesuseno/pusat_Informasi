@@ -8,6 +8,8 @@ interface HeaderProps {
   siteTitle?: string;
   logoUrl?: string;
   heroBgColorStart?: string;
+  headerBtnCaption?: string;
+  headerBtnLink?: string;
 }
 
 function ChevronDown({ className = "w-3 h-3" }: { className?: string }) {
@@ -106,7 +108,7 @@ function MobileSection({
   );
 }
 
-export default function Header({ siteTitle = "KMC", logoUrl, heroBgColorStart = "#4f46e5" }: HeaderProps) {
+export default function Header({ siteTitle = "KMC", logoUrl, heroBgColorStart = "#4f46e5", headerBtnCaption, headerBtnLink }: HeaderProps) {
   const [user, setUser] = useState<{ name: string; role: string } | null>(null);
   const [locale, setLocale] = useState("en");
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -114,6 +116,8 @@ export default function Header({ siteTitle = "KMC", logoUrl, heroBgColorStart = 
   const pathname = usePathname();
 
   useEffect(() => {
+    let cancelled = false;
+
     const cookies = document.cookie.split(";");
     const localeCookie = cookies.find(c => c.trim().startsWith("locale="));
     if (localeCookie) {
@@ -132,6 +136,7 @@ export default function Header({ siteTitle = "KMC", logoUrl, heroBgColorStart = 
     fetch("/api/auth/me")
       .then(r => r.json())
       .then(data => {
+        if (cancelled) return;
         if (data.user) {
           setUser(data.user);
           sessionStorage.setItem("user", JSON.stringify(data.user));
@@ -140,6 +145,8 @@ export default function Header({ siteTitle = "KMC", logoUrl, heroBgColorStart = 
         }
       })
       .catch(() => {});
+
+    return () => { cancelled = true; };
   }, []);
 
   const switchLocale = (newLocale: string) => {
@@ -179,7 +186,7 @@ export default function Header({ siteTitle = "KMC", logoUrl, heroBgColorStart = 
         myExams: "My Exams",
         admin: "Admin",
         logout: "Logout",
-        donate: "Donate",
+
       },
       id: {
         home: "Beranda",
@@ -190,7 +197,7 @@ export default function Header({ siteTitle = "KMC", logoUrl, heroBgColorStart = 
         myExams: "Ujian Saya",
         admin: "Admin",
         logout: "Keluar",
-        donate: "Donasi",
+
       },
     };
     return dict[locale]?.[key] || dict.en?.[key] || key;
@@ -337,15 +344,15 @@ export default function Header({ siteTitle = "KMC", logoUrl, heroBgColorStart = 
               </div>
             )}
 
-            {!user && !isInEnter && (
+            {!user && !isInEnter && headerBtnCaption && headerBtnLink && (
               <a
-                href="https://digital.dompetdhuafa.org/"
+                href={headerBtnLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hidden md:inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white hover:opacity-90 transition-opacity"
                 style={{ backgroundColor: heroBgColorStart }}
               >
-                {t("donate")}
+                {headerBtnCaption}
               </a>
             )}
 
@@ -404,15 +411,15 @@ export default function Header({ siteTitle = "KMC", logoUrl, heroBgColorStart = 
                 </div>
               </>
             )}
-            {!user && !isInEnter && (
+            {!user && !isInEnter && headerBtnCaption && headerBtnLink && (
               <a
-                href="https://digital.dompetdhuafa.org/"
+                href={headerBtnLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block px-3 py-2 text-sm font-medium text-white rounded-md text-center"
                 style={{ backgroundColor: heroBgColorStart }}
               >
-                {t("donate")}
+                {headerBtnCaption}
               </a>
             )}
           </div>

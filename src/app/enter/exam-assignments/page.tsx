@@ -5,7 +5,11 @@ import { redirect } from "next/navigation";
 import { getAllSettings } from "@/lib/settings";
 import jwt from "jsonwebtoken";
 
-export default async function ExamAssignmentsPage() {
+export default async function ExamAssignmentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
   const locale = cookieStore.get("locale")?.value || "en";
@@ -22,7 +26,33 @@ export default async function ExamAssignmentsPage() {
 
   const isAdmin = userRole === "ADMIN" || userRole === "HR";
 
+  // Parse search params
+  const sp = await searchParams;
+  const filterExamId = typeof sp.examId === "string" ? sp.examId : "";
+  const filterUserId = typeof sp.userId === "string" ? sp.userId : "";
+  const filterStatus = typeof sp.status === "string" ? sp.status : "";
+  const filterDateFrom = typeof sp.dateFrom === "string" ? sp.dateFrom : "";
+  const filterDateTo = typeof sp.dateTo === "string" ? sp.dateTo : "";
+
+  // Fetch exams & users for filter dropdowns
+  const [exams, users] = await Promise.all([
+    prisma.exam.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    prisma.user.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, email: true } }),
+  ]);
+
+  // Build where clause
+  const where: any = {};
+  if (filterExamId) where.examId = Number(filterExamId);
+  if (filterUserId) where.userId = Number(filterUserId);
+  if (filterStatus) where.status = filterStatus;
+  if (filterDateFrom || filterDateTo) {
+    where.createdAt = {};
+    if (filterDateFrom) where.createdAt.gte = new Date(filterDateFrom);
+    if (filterDateTo) where.createdAt.lte = new Date(filterDateTo + "T23:59:59.999Z");
+  }
+
   const assignments = await prisma.examAssignment.findMany({
+    where,
     orderBy: { createdAt: "desc" },
     include: {
       exam: { select: { id: true, name: true } },
@@ -49,6 +79,11 @@ export default async function ExamAssignmentsPage() {
         pending: "Pending",
         in_progress: "In Progress",
         completed: "Completed",
+        all: "All",
+        dateFrom: "Date From",
+        dateTo: "Date To",
+        filter: "Filter",
+        reset: "Reset",
       },
       id: {
         title: "Penugasan Ujian",
@@ -65,6 +100,11 @@ export default async function ExamAssignmentsPage() {
         pending: "Menunggu",
         in_progress: "Sedang Dikerjakan",
         completed: "Selesai",
+        all: "Semua",
+        dateFrom: "Tanggal Dari",
+        dateTo: "Tanggal Sampai",
+        filter: "Filter",
+        reset: "Reset",
       },
     };
     return dict[locale]?.[key] || dict.en?.[key] || key;
@@ -96,6 +136,95 @@ export default async function ExamAssignmentsPage() {
             </Link>
           )}
         </div>
+
+        {/* Filter Bar */}
+        <div className="bg-gray-50 border-b border-gray-200 px-4 py-4 sm:px-6">
+          <form className="flex flex-wrap items-end gap-3">
+            {/* Exam Filter */}
+            <div className="flex flex-col min-w-[160px]">
+              <label className="text-xs font-medium text-gray-500 mb-1">{t("exam")}</label>
+              <select
+                name="examId"
+                defaultValue={filterExamId}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="">{t("all")}</option>
+                {exams.map((exam) => (
+                  <option key={exam.id} value={exam.id}>{exam.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* User Filter */}
+            <div className="flex flex-col min-w-[160px]">
+              <label className="text-xs font-medium text-gray-500 mb-1">{t("user")}</label>
+              <select
+                name="userId"
+                defaultValue={filterUserId}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="">{t("all")}</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>{user.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Status Filter */}
+            <div className="flex flex-col min-w-[140px]">
+              <label className="text-xs font-medium text-gray-500 mb-1">{t("status")}</label>
+              <select
+                name="status"
+                defaultValue={filterStatus}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="">{t("all")}</option>
+                <option value="PENDING">{t("pending")}</option>
+                <option value="IN_PROGRESS">{t("in_progress")}</option>
+                <option value="COMPLETED">{t("completed")}</option>
+              </select>
+            </div>
+
+            {/* Date From */}
+            <div className="flex flex-col min-w-[150px]">
+              <label className="text-xs font-medium text-gray-500 mb-1">{t("dateFrom")}</label>
+              <input
+                type="date"
+                name="dateFrom"
+                defaultValue={filterDateFrom}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            {/* Date To */}
+            <div className="flex flex-col min-w-[150px]">
+              <label className="text-xs font-medium text-gray-500 mb-1">{t("dateTo")}</label>
+              <input
+                type="date"
+                name="dateTo"
+                defaultValue={filterDateTo}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            {/* Buttons */}
+            <div className="flex items-center gap-2">
+              <button
+                type="submit"
+                className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                {t("filter")}
+              </button>
+              <Link
+                href="/enter/exam-assignments"
+                className="px-4 py-2 border border-gray-300 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                {t("reset")}
+              </Link>
+            </div>
+          </form>
+        </div>
+
         <div className="bg-white">
           {assignments.length === 0 ? (
             <p className="px-6 py-12 text-center text-gray-500">{t("noData")}</p>

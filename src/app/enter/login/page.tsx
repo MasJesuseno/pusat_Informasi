@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface LoginSettings {
   site_title: string;
@@ -8,12 +8,28 @@ interface LoginSettings {
   hero_bg_color_start: string;
 }
 
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: any) => void;
+          renderButton: (element: HTMLElement, config: any) => void;
+          prompt: () => void;
+        };
+      };
+    };
+  }
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [settings, setSettings] = useState<LoginSettings | null>(null);
+  const [gsiReady, setGsiReady] = useState(false);
 
   useEffect(() => {
     fetch("/api/settings")
@@ -23,6 +39,79 @@ export default function LoginPage() {
       })
       .catch(() => {});
   }, []);
+
+  const handleGoogleCredential = useCallback(async (credential: string) => {
+    setGoogleLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Google sign-in failed");
+        return;
+      }
+
+      if (data.user) {
+        sessionStorage.setItem("user", JSON.stringify(data.user));
+        const role = data.user?.role;
+        window.location.href = role === "HR" ? "/enter/hr/dashboard" : "/enter/dashboard";
+      }
+    } catch {
+      setError("An error occurred during Google sign-in");
+    } finally {
+      setGoogleLoading(false);
+    }
+  }, []);
+
+  // Initialize Google Identity Services
+  useEffect(() => {
+    // Load GIS script
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.initialize({
+          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+          callback: (response: { credential?: string }) => {
+            if (response.credential) {
+              handleGoogleCredential(response.credential);
+            }
+          },
+        });
+        setGsiReady(true);
+      }
+    };
+    document.head.appendChild(script);
+
+    return () => {
+      // Cleanup: GIS script is loaded once, no need to remove
+    };
+  }, [handleGoogleCredential]);
+
+  // Render Google button once GIS is ready
+  useEffect(() => {
+    if (gsiReady && window.google?.accounts?.id) {
+      const buttonDiv = document.getElementById("google-signin-button");
+      if (buttonDiv) {
+        window.google.accounts.id.renderButton(buttonDiv, {
+          theme: "outline",
+          size: "large",
+          width: "100%",
+          text: "signin_with",
+          shape: "rectangular",
+          logo_alignment: "center",
+        });
+      }
+    }
+  }, [gsiReady]);
 
   const bgColor = settings?.hero_bg_color_start || "#4f46e5";
   const siteTitle = settings?.site_title || "Knowledge Management Center";
@@ -46,9 +135,7 @@ export default function LoginPage() {
       if (!res.ok) {
         setError(data.error || "Login failed");
       } else {
-        // Save user to sessionStorage for immediate header update
         sessionStorage.setItem("user", JSON.stringify(data.user));
-        // Full page reload to re-mount Header with sessionStorage data
         const role = data.user?.role;
         window.location.href = role === "HR" ? "/enter/hr/dashboard" : "/enter/dashboard";
       }
@@ -79,6 +166,25 @@ export default function LoginPage() {
               <p className="text-gray-500 mt-1">Sign in to your account</p>
             </div>
 
+            {/* Google Sign-In Button */}
+            <div className="mb-4">
+              <div id="google-signin-button" className="w-full flex justify-center min-h-[40px]"></div>
+              {googleLoading && (
+                <p className="text-sm text-gray-500 text-center mt-2">Connecting to Google...</p>
+              )}
+            </div>
+
+            {/* Divider */}
+            <div className="relative mb-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-white px-3 text-gray-500">atau masuk dengan email</span>
+              </div>
+            </div>
+
+            {/* Email/Password Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">

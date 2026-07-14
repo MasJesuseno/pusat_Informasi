@@ -22,6 +22,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!user.password) {
+      return NextResponse.json(
+        { error: "This account uses Google Sign-In. Please sign in with Google." },
+        { status: 401 }
+      );
+    }
+
     const valid = await comparePassword(password, user.password);
     
     if (!valid) {
@@ -49,7 +56,7 @@ export async function POST(request: Request) {
       httpOnly: true,
       secure: isSecure,
       sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60, // 7 days
+      maxAge: 10 * 365 * 24 * 60 * 60, // 10 years (no expiry)
       path: "/",
     });
 

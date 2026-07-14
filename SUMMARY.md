@@ -75,39 +75,20 @@ kmc-project/
 
 > Dibuat: 11 Juni 2026 | Diperbarui: 14 Juni 2026
 > Lokasi: D:\kmc-project
-> Deployment: http://192.168.1.52 (Production server — Ubuntu 26.04 LTS)
-> Cloudflare Tunnel: Terhubung
 > Header Dinamis: Warna latar judul halaman mengikuti Site Settings → hero_bg_color_start
 > Login Page: Logo & warna button dinamis dari Site Settings
-> Stack: Next.js 16 + TypeScript + Prisma 7 + MySQL 8 + Tailwind CSS 4 + nginx 1.28 + PM2
+> Stack: Next.js 16 + TypeScript + Prisma 7 + MySQL 8 + Tailwind CSS 4
 
 ---
 
 ## 1. Cara Menjalankan
 
-### Development (Lokal — D:\kmc-project)
 ```bash
-npm run dev     # http://localhost:3000
+npm run dev     # http://localhost:3000 (development)
 npm run build   # Production build
 npm start       # Production server
 npx tsx prisma/seed.ts  # Seed data ulang
 npx prisma migrate deploy  # Migrasi database
-```
-
-### Production (Server 192.168.1.52 — Ubuntu 26.04)
-| Layanan | Port | Keterangan |
-|---------|------|------------|
-| Next.js (PM2) | 3000 | Aplikasi utama, via `pm2 start npm --name kmc-project -- start` |
-| nginx reverse proxy | 80 | Proxy 80 → 3000, set X-Forwarded-Proto |
-| Cloudflare Tunnel | - | Tunnel ke Cloudflare (token di systemd) |
-| MySQL | 3306 | Database kmc, root tanpa password (mysql_native_password) |
-
-### SSH Akses Server
-```bash
-plink -ssh root@192.168.1.52
-# Password: it92528!@
-# Atau via pscp untuk transfer file:
-pscp -pw it92528!@ file.sql root@192.168.1.52:/root/kmc-project/
 ```
 
 ---
@@ -643,7 +624,6 @@ Settings disimpan di database (model Setting: key String @id, value String).
 - [ ] Upload gambar/file untuk artikel (sudah ada endpoint, perlu integrasi)
 - [ ] Rate limiting API
 - [ ] Unit tests
-- [x] Deploy ke production server (192.168.1.52 — Ubuntu 26.04)
 - [ ] Export soal ke PDF/excel
 - [ ] Quiz/try-out interaktif untuk soal
 - [ ] Halaman publik untuk mengerjakan ujian

@@ -97,6 +97,8 @@ async function main() {
     { key: 'hero_bg_color_start', value: '#4f46e5' },
     { key: 'hero_bg_color_end', value: '#1e1b4b' },
     { key: 'hero_bg_image', value: '' },
+    { key: 'header_btn_caption', value: 'Donasi' },
+    { key: 'header_btn_link', value: 'https://digital.dompetdhuafa.org/' },
   ];
   for (const s of defaultSettings) {
     await prisma.setting.upsert({

@@ -143,6 +143,8 @@ export default function AdminSidebar({
   const pathname = usePathname();
 
   useEffect(() => {
+    let cancelled = false;
+
     const cookies = document.cookie.split(";");
     const localeCookie = cookies.find(c => c.trim().startsWith("locale="));
     if (localeCookie) {
@@ -159,6 +161,7 @@ export default function AdminSidebar({
     fetch("/api/auth/me")
       .then(r => r.json())
       .then(data => {
+        if (cancelled) return;
         if (data.user) {
           setUser(data.user);
           sessionStorage.setItem("user", JSON.stringify(data.user));
@@ -167,6 +170,8 @@ export default function AdminSidebar({
         }
       })
       .catch(() => {});
+
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -291,10 +296,10 @@ export default function AdminSidebar({
     },
   ];
 
-  const singleLinks: { label: string; href: string; icon: string; roles?: ("ADMIN" | "HR" | "INTERNAL")[] }[] = [
+  const singleLinks: { label: string; href: string; icon: string; roles?: ("ADMIN" | "HR" | "INTERNAL")[]; external?: boolean }[] = [
     { label: "dashboard", href: "/enter/dashboard", icon: "dashboard" },
     { label: "myCollection", href: "/enter/my-collection", icon: "collection" },
-    { label: "search", href: "/search", icon: "search" },
+    { label: "search", href: "/search", icon: "search", external: true },
   ];
 
   const userRole = user?.role || "";
@@ -393,24 +398,44 @@ export default function AdminSidebar({
           {singleLinks.map(link => {
             if (!showLink(link)) return null;
             const active = isExactActive(link.href);
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`
-                  flex items-center rounded-lg transition-all duration-200 group
-                  ${collapsed ? "justify-center w-12 h-10 mx-auto" : "px-3 py-2.5 space-x-3"}
-                  ${active
-                    ? "bg-indigo-50 text-indigo-700 font-medium"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  }
-                `}
-                title={collapsed ? t(link.label) : undefined}
-              >
+            const linkClasses = `
+              flex items-center rounded-lg transition-all duration-200 group
+              ${collapsed ? "justify-center w-12 h-10 mx-auto" : "px-3 py-2.5 space-x-3"}
+              ${active
+                ? "bg-indigo-50 text-indigo-700 font-medium"
+                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+              }
+            `;
+            const iconMarkup = (
+              <>
                 <span className={active ? "text-indigo-600" : "text-gray-400 group-hover:text-gray-600 transition-colors"}>
                   <SidebarIcon icon={link.icon} />
                 </span>
                 {!collapsed && <span className="text-sm truncate">{t(link.label)}</span>}
+              </>
+            );
+            if (link.external) {
+              return (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={linkClasses}
+                  title={collapsed ? t(link.label) : undefined}
+                >
+                  {iconMarkup}
+                </a>
+              );
+            }
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={linkClasses}
+                title={collapsed ? t(link.label) : undefined}
+              >
+                {iconMarkup}
               </Link>
             );
           })}

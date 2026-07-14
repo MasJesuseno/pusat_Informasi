@@ -8,13 +8,16 @@ datasource db {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  email     String    @unique
-  password  String
-  name      String
-  role      String    @default("INTERNAL")
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  password      String?
+  name          String
+  role          String    @default("INTERNAL")
+  googleId      String?   @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   articles      Article[]
   collections   ArticleCollection[]
   assignments   ExamAssignment[]

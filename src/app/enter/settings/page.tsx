@@ -18,6 +18,8 @@ export default function SettingsPage() {
     hero_bg_color_end: "#1e1b4b",
     hero_bg_image: "",
     hover_category_color: "#4f46e5",
+    header_btn_caption: "",
+    header_btn_link: "",
   });
 
   useEffect(() => {
@@ -233,6 +235,25 @@ export default function SettingsPage() {
                 className="h-10 w-12 rounded border border-gray-300 cursor-pointer" />
               <input type="text" value={settings.hover_category_color} onChange={e => update("hover_category_color", e.target.value)}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-white rounded-lg border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Header Button (Public)</h2>
+          <p className="text-sm text-gray-500 mb-4">Konfigurasi tombol yang muncul di header halaman publik (untuk pengguna yang belum login).</p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Caption Tombol</label>
+              <input type="text" value={settings.header_btn_caption} onChange={e => update("header_btn_caption", e.target.value)}
+                placeholder="Donasi"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Link Tombol</label>
+              <input type="text" value={settings.header_btn_link} onChange={e => update("header_btn_link", e.target.value)}
+                placeholder="https://example.com"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
             </div>
           </div>
         </section>

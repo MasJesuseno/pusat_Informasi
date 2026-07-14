@@ -12,9 +12,20 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");
+  const examId = searchParams.get("examId");
+  const userId = searchParams.get("userId");
+  const dateFrom = searchParams.get("dateFrom");
+  const dateTo = searchParams.get("dateTo");
 
   const where: any = {};
   if (status) where.status = status;
+  if (examId) where.examId = Number(examId);
+  if (userId) where.userId = Number(userId);
+  if (dateFrom || dateTo) {
+    where.createdAt = {};
+    if (dateFrom) where.createdAt.gte = new Date(dateFrom);
+    if (dateTo) where.createdAt.lte = new Date(dateTo + "T23:59:59.999Z");
+  }
 
   const assignments = await prisma.examAssignment.findMany({
     where,

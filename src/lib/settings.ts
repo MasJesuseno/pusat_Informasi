@@ -12,6 +12,8 @@ export interface SiteSettings {
   hero_bg_color_end: string;
   hero_bg_image: string;
   hover_category_color: string;
+  header_btn_caption: string;
+  header_btn_link: string;
 }
 
 export const defaultSettings: SiteSettings = {
@@ -25,6 +27,8 @@ export const defaultSettings: SiteSettings = {
   hero_bg_color_end: "#1e1b4b",
   hero_bg_image: "",
   hover_category_color: "#4f46e5",
+  header_btn_caption: "Donasi",
+  header_btn_link: "https://digital.dompetdhuafa.org/",
 };
 
 export const getAllSettings = cache(async (): Promise<SiteSettings> => {
